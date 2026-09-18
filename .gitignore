@@ -3,6 +3,7 @@
 **/*.pyc
 **/*.egg-info/
 **/mypy_cache/
+**/*.log
 
 # Project root
 build/

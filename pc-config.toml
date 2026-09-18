@@ -1,0 +1,3 @@
+force = true
+quiet = false
+file = "./src/main.py"
