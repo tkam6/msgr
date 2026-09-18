@@ -9,6 +9,7 @@ class BaseWidget:
     content: list[str]
     line_range: tuple[int, int | float]
     col_range: tuple[int, int | float]
+    border: bool
 
 
 class MainBox(BaseWidget):

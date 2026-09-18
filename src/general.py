@@ -2,6 +2,22 @@ KEYS = {
     "q": ord("q"),
     "Q": ord("Q"),
 }
+ROUND_CHS = {
+    "top-left"    : "╭",
+    "top-right"   : "╮",
+    "bottom-left" : "╰",
+    "bottom-right": "╯",
+    "horizontal"  : "─",
+    "vertical"    : "│",
+}
+SHARP_CHS = {
+    "top-left"    : "┌",
+    "top-right"   : "┐",
+    "bottom-left" : "└",
+    "bottom-right": "┘",
+    "horizontal"  : "─",
+    "vertical"    : "│",
+}
 
 
 def is_key(key: int, chk_against: tuple[str]) -> bool:
