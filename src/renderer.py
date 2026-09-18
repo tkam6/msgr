@@ -18,12 +18,9 @@ class Win:
         self.scr.keypad(True)
 
         self.term_sz = self.scr.getmaxyx()
-
-        self.getch = self.scr.getch
-        self.getkey = self.scr.getkey
-        self.refresh = self.scr.refresh
         self.clear = self.scr.clear
         self.erase = self.scr.erase
+        self.refresh = self.scr.refresh
 
     def addch(self, y: int, x: int, c: str) -> None:
         try:
@@ -42,6 +39,8 @@ class Win:
     def chk_point_visibility(self, y: int, x: int) -> bool:
         return 0 <= y < self.term_sz[0] and 0 <= x < self.term_sz[1]
 
+    # TODO: make dimensions and anchors include lambdas and functions for
+    # dynamic dimensions
     def draw(self, widget_list: "dict[str, wgts.BaseWidget]") -> None:
         self.term_sz = self.scr.getmaxyx()
 

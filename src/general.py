@@ -1,9 +1,12 @@
 debug_file = open("./all.log", "a+")
 
+FPS = 60
+
 KEYS = {
     "q": ord("q"),
     "Q": ord("Q"),
 }
+
 ROUND_CHS = {
     "top-left"    : "╭",
     "top-right"   : "╮",
