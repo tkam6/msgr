@@ -13,25 +13,28 @@ def main(scr: cur.window) -> list[int]:
     win = ren.Win(scr)
     widget_list = {
         "convo-list": wgts.ConvoList(
-            height=win.term_sz[0] - 20,
-            width=win.term_sz[1] - 20,
-            anchor=(-10, -10),
+            height=lambda win, widget: win.term_sz[0] - 5,
+            width=lambda win, widget: win.term_sz[1] - 10,
+            anchor=(
+                lambda win, widget: (win.term_sz[0] - widget.height(win, widget)) // 2,
+                lambda win, widget: (win.term_sz[1] - widget.width(win, widget)) // 2,
+            ),
             content=[],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=-1,
             border=True,
         ),
-        "test": wgts.MainBox(
-            height=win.term_sz[0],
-            width=win.term_sz[1],
-            anchor=(0, 0),
-            content=[],
-            line_range=[0, math.inf],
-            col_range=[0, math.inf],
-            alignment=-1,
-            border=True,
-        ),
+        # "test": wgts.MainBox(
+        #     height=win.term_sz[0],
+        #     width=win.term_sz[1],
+        #     anchor=(0, 0),
+        #     content=[],
+        #     line_range=[0, math.inf],
+        #     col_range=[0, math.inf],
+        #     alignment=-1,
+        #     border=True,
+        # ),
         "test2": wgts.BaseWidget(
             height=10,
             width=20,
@@ -65,9 +68,6 @@ def main(scr: cur.window) -> list[int]:
         total += (now := time.perf_counter()) - last
         frames += 1
         last = now
-
-        if frames == 240:
-            widget_list["test2"].anchor = (0, 0)
 
     return (total, frames)
 
