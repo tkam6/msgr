@@ -1,5 +1,3 @@
-import sys
-
 debug_file = open("./all.log", "a+")
 
 KEYS = {

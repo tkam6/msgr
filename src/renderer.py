@@ -23,6 +23,20 @@ class Win:
         self.refresh = self.scr.refresh
         self.clear = self.scr.clear
 
+    def addch(self, y: int, x: int, c: str) -> None:
+        try:
+            self.scr.addch(y, x, c)
+        except cur.error:
+            if not (y == self.term_sz[0] - 1 and x == self.term_sz[1] - 1):
+                raise
+
+    def addnstr(self, y: int, x: int, s: str, n: int) -> None:
+        try:
+            self.scr.addnstr(y, x, s, n)
+        except cur.error:
+            if not (y == self.term_sz[0] - 1 and x + n < self.term_sz[1]):
+                raise
+
     def draw(self, widget_list: "dict[str, wgts.BaseWidget]") -> None:
         self.term_sz = self.scr.getmaxyx()
 
@@ -63,23 +77,43 @@ class Win:
             for idx, line in enumerate(to_draw[: actual_height]):
                 if y + idx > self.term_sz[0] - 1:
                     break
-                self.scr.addnstr(y + idx, x, line[: actual_width], self.term_sz[1] - x - 1)
-                # left and right borders
-                if widget.border:
-                    self.scr.addch(y + idx, widget.anchor[0], gen.ROUND_CHS["vertical"])
-                    self.scr.addch(y + idx, widget.anchor[0] + widget.width - 1, gen.ROUND_CHS["vertical"])
+                self.addnstr(y + idx, x, line[: actual_width], self.term_sz[1] - x - 1)
 
-            # top and bottom borders
+            # draw widget borders
             if widget.border:
-                self.scr.addnstr(
+                # left and right borders
+                for i in range(widget.anchor[0] + 1, widget.anchor[0] + widget.height - 1):
+                    self.addch(
+                        widget.anchor[0] + i,
+                        widget.anchor[1],
+                        gen.ROUND_CHS["vertical"],
+                    )
+                    self.addch(
+                        widget.anchor[0] + i,
+                        widget.anchor[1] + widget.width - 1,
+                        gen.ROUND_CHS["vertical"],
+                    )
+
+                # for some blizzare reason, i couldn't accomodate these inside
+                # a single addnstr call. it left out the top-right and
+                # bottom-right corner for some reason. but i prefer it this
+                # way, as separate calls for corners and edges
+
+                # top border
+                self.addch(widget.anchor[1], widget.anchor[0], gen.ROUND_CHS["top-left"])
+                self.addnstr(
                     widget.anchor[1],
-                    widget.anchor[0],
-                    f"{gen.ROUND_CHS["top-left"]}{gen.ROUND_CHS["horizontal"] * actual_width}{gen.ROUND_CHS["top-right"]}",
-                    self.term_sz[1] - widget.width,
+                    widget.anchor[0] + 1,
+                    gen.ROUND_CHS["horizontal"] * actual_width,
+                    self.term_sz[1] - widget.anchor[1] - 1,
                 )
-                self.scr.addnstr(
+                self.addch(widget.anchor[1], widget.anchor[0] + widget.width - 1, gen.ROUND_CHS["top-right"])
+                # bottom border
+                self.addch(widget.anchor[1] + widget.height - 1, widget.anchor[0], gen.ROUND_CHS["bottom-left"])
+                self.addnstr(
                     widget.anchor[1] + widget.height - 1,
-                    widget.anchor[0],
-                    f"{gen.ROUND_CHS["bottom-left"]}{gen.ROUND_CHS["horizontal"] * actual_width}{gen.ROUND_CHS["bottom-right"]}",
-                    self.term_sz[1] - widget.width,
+                    widget.anchor[0] + 1,
+                    gen.ROUND_CHS["horizontal"] * actual_width,
+                    self.term_sz[1] - widget.anchor[1] - 1,
                 )
+                self.addch(widget.anchor[1] + widget.height - 1, widget.anchor[0] + widget.width - 1, gen.ROUND_CHS["bottom-right"])
