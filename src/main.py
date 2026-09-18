@@ -10,17 +10,24 @@ from src import widgets as wgts
 def main(scr: cur.window) -> None:
     win = ren.Win(scr)
     widget_list = {
-        "test": wgts.MainBox(
-            width=win.term_sz[1],
-            height=win.term_sz[0],
-            anchor=(0, 0),
-            content=[
-                "hello world, this is thiru from nitc. im really stupid, and i'm writing this stupidly long sentence to test out my new messenger application program im writing right now, right fucking now.",
-                "hello wold, this is thiru from nitc. im really stupid, and i'm writing this stupidly long sentence to test out my new messenger application program im writing right now, right fucking now.",
-                "llo wold, this thiru from nitc. im really stupid, and i'm writing this stupidly long sentence to test out my new messenger application program im writing right now, right fucking now.",
-            ],
+        "convo-list": wgts.ConvoList(
+            height=win.term_sz[0] - 20,
+            width=win.term_sz[1] - 20,
+            anchor=(100, 5),
+            content=[],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
+            alignment=-1,
+            border=True,
+        ),
+        "test": wgts.MainBox(
+            height=win.term_sz[0],
+            width=win.term_sz[1],
+            anchor=(0, 0),
+            content=[],
+            line_range=[0, math.inf],
+            col_range=[0, math.inf],
+            alignment=-1,
             border=True,
         ),
     }

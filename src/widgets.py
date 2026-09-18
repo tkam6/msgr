@@ -9,8 +9,17 @@ class BaseWidget:
     content: list[str]
     line_range: tuple[int, int | float]
     col_range: tuple[int, int | float]
-    border: bool
+    alignment: int = -1
+    border: bool = False
 
 
 class MainBox(BaseWidget):
+    pass
+
+
+class ConvoList(BaseWidget):
+    pass
+
+
+class ConvoEntry(BaseWidget):
     pass
