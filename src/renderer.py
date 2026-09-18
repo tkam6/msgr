@@ -29,15 +29,26 @@ class Win:
             if not (y == self.term_sz[0] - 1 and x == self.term_sz[1] - 1):
                 raise
 
-    def addnstr(self, y: int, x: int, s: str, n: int) -> None:
+    def addnstr(self, y: int, x: int, s: str, n: int, attr: int | None = None) -> None:
         try:
-            self.scr.addnstr(y, x, s, n)
+            if attr is None:
+                self.scr.addnstr(y, x, s, n)
+            else:
+                self.scr.addnstr(y, x, s, n, attr)
         except cur.error:
             if not (y == self.term_sz[0] - 1 and x + n < self.term_sz[1]):
                 raise
 
     def chk_point_visibility(self, y: int, x: int) -> bool:
         return 0 <= y < self.term_sz[0] and 0 <= x < self.term_sz[1]
+
+    def get_bitwise_or(self, arr: ty.Iterable[int]) -> int | None:
+        if not arr:
+            return None
+        res = arr[0]
+        for i in arr[1 :]:
+            res = res | i
+        return res
 
     # TODO: make dimensions and anchors include lambdas and functions for
     # dynamic dimensions
@@ -77,21 +88,30 @@ class Win:
                 line_range1 = len(widget.content)
             if math.isinf(col_range1):
                 col_range1 = (
-                    len(max([line for line in widget.content], key=len))
+                    len(max([line for line, *attrs in widget.content], key=len))
                     if widget.content else 0
                 )
             # extract lines and columns that are in range
             lines = widget.content[line_range[0] : line_range1]
-            to_draw = [line[col_range[0] : col_range1] for line in lines]
+            to_draw = [
+                (line[col_range[0] : col_range1], attrs)
+                for line, *attrs in lines
+            ]
 
             # draw only top-left-most part of extracted range lines and columns
-            for idx, line in enumerate(to_draw[: actual_height]):
+            for idx, (line, attrs) in enumerate(to_draw[: actual_height]):
                 if y + idx > self.term_sz[0] - 1:
                     break
-                self.addnstr(y + idx, x, line[: actual_width], self.term_sz[1] - x - 1)
+                if attrs:
+                    with open("all.log", "w") as f:
+                        f.write(str(self.get_bitwise_or(attrs)) + " " + str(cur.A_REVERSE))
+                self.addnstr(y + idx, x, line[: actual_width], self.term_sz[1] - x - 1, attr=self.get_bitwise_or(attrs))
 
             # draw widget borders
             if widget.border:
+                if height < 2:
+                    raise RuntimeError(f"Widget '{name}': Cannot draw every damn thing in the space you've given")
+
                 # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
                 # TODO: implement clipping for vertical border lines
                 for i in range(actual_height):

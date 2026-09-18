@@ -1,6 +1,5 @@
 #!/usr/bin/env -S python3 -BOO
 import curses as cur
-import dataclasses as dcs
 import math
 import time
 
@@ -12,39 +11,36 @@ from src import widgets as wgts
 def main(scr: cur.window) -> list[int]:
     win = ren.Win(scr)
     widget_list = {
-        "convo-list": wgts.ConvoList(
-            height=lambda win, widget: win.term_sz[0] - 5,
-            width=lambda win, widget: win.term_sz[1] - 10,
-            anchor=(
-                lambda win, widget: (win.term_sz[0] - widget.height(win, widget)) // 2,
-                lambda win, widget: (win.term_sz[1] - widget.width(win, widget)) // 2,
-            ),
+        "main-box": wgts.MainBox(
+            height=lambda win, widget: win.term_sz[0],
+            width=lambda win, widget: win.term_sz[1],
+            anchor=wgts.anchor_centre,
             content=[],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=-1,
             border=True,
         ),
-        # "test": wgts.MainBox(
-        #     height=win.term_sz[0],
-        #     width=win.term_sz[1],
-        #     anchor=(0, 0),
-        #     content=[],
-        #     line_range=[0, math.inf],
-        #     col_range=[0, math.inf],
-        #     alignment=-1,
-        #     border=True,
-        # ),
-        "test2": wgts.BaseWidget(
-            height=10,
-            width=20,
-            anchor=(10, 30),
-            content=["hello world"],
+        "convo-list": wgts.ConvoList(
+            height=lambda win, widget: win.term_sz[0] - 4,
+            width=lambda win, widget: win.term_sz[1] - 4,
+            anchor=wgts.anchor_centre,
+            content=[],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=-1,
             border=True,
-        )
+        ),
+        "convo-entry": wgts.ConvoEntry(
+            height=4,
+            width=lambda win, widget: win.term_sz[1] - 6,
+            anchor=(3, 3),
+            content=[("sneha", cur.A_REVERSE), ("Hi Thiru",)],
+            line_range=[0, math.inf],
+            col_range=[0, math.inf],
+            alignment=-1,
+            border=True,
+        ),
     }
 
     frame_time = 1 / gen.FPS
