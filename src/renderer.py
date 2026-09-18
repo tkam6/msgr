@@ -23,6 +23,7 @@ class Win:
         self.getkey = self.scr.getkey
         self.refresh = self.scr.refresh
         self.clear = self.scr.clear
+        self.erase = self.scr.erase
 
     def addch(self, y: int, x: int, c: str) -> None:
         try:
@@ -79,7 +80,8 @@ class Win:
 
             # draw widget borders
             if widget.border:
-                # left and right (vertical) borders, char-by-char
+                # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
+                # TODO: implement clipping for vertical border lines
                 for i in range(actual_height):
                     left_cell = (y + i, widget.anchor[1])
                     right_cell = (y + i, widget.anchor[1] + widget.width - 1)
@@ -101,7 +103,9 @@ class Win:
                 # top-left cell
                 if self.chk_point_visibility(*topleft_cell):
                     self.addch(*topleft_cell, gen.ROUND_CHS["top-left"])
+
                 # horizontal line, char-by-char
+                # TODO: implement clipping for horizontal border lines
                 for i in range(actual_width):
                     top_cell = (widget.anchor[0], x + i)
                     btm_cell = (widget.anchor[0] + widget.height - 1, x + i)
@@ -111,6 +115,7 @@ class Win:
                     # bottom horizontal
                     if self.chk_point_visibility(*btm_cell):
                         self.addch(*btm_cell, gen.ROUND_CHS["horizontal"])
+
                 # top-right cell
                 if self.chk_point_visibility(*topright_cell):
                     self.addch(*topright_cell, gen.ROUND_CHS["top-right"])
