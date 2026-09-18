@@ -25,15 +25,34 @@ class Win:
         self.term_sz = self.scr.getmaxyx()
 
         for name, widget in widget_list.items():
-            range0 = widget.range_[0]
-            range1 = widget.range_[1]
-            if math.isinf(range0):
-                raise RuntimeError(f"Widget {name}: Range first element cannot be inf")
-            if math.isinf(range1):
-                range1 = len(widget.content)
-            lines = widget.content[range0 : range1]
+            y = widget.anchor[0]
+            x = widget.anchor[1]
+            line_range0 = widget.line_range[0]
+            line_range1 = widget.line_range[1]
+            col_range0 = widget.col_range[0]
+            col_range1 = widget.col_range[1]
+            # line and column ranges first indices aren't supposed to be inf
+            if math.isinf(line_range0):
+                raise RuntimeError(f"Widget {name}: Line range first element cannot be inf")
+            if math.isinf(col_range0):
+                raise RuntimeError(f"Widget {name}: Column range first element cannot be inf")
+            # if line or column ranges second indices are inf, change them to
+            # length of corresponding whatever
+            if math.isinf(line_range1):
+                line_range1 = len(widget.content)
+            if math.isinf(col_range1):
+                col_range1 = (
+                    len(max([line for line in widget.content], key=len))
+                    if widget.content else 0
+                )
+            # extract lines and columns that are in range
+            lines = widget.content[line_range0 : line_range1]
             if not lines:
-                raise RuntimeError(f"Widget {name}: Invalid range [{range0}, {range1}); nothing to display")
+                raise RuntimeError(f"Widget {name}: Invalid range [{line_range0}, {line_range1}); nothing to display")
+            to_draw = [line[col_range0 : col_range1] for line in lines]
 
-            for idx, line in enumerate(lines):
-                self.scr.addnstr(widget.anchor[0] + idx, widget.anchor[1], line, self.term_sz[0])
+            # draw only top-left-most part of extracted range lines and columns
+            for idx, line in enumerate(to_draw[: widget.height]):
+                if y + idx > self.term_sz[0] - 1:
+                    break
+                self.scr.addnstr(y + idx, x, line[: widget.width], self.term_sz[1] - widget.width)

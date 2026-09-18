@@ -7,5 +7,9 @@ class BaseWidget:
     height: int
     anchor: tuple[int, int]
     content: list[str]
-    range_: tuple[int, int | float]
-    chop: bool = True
+    line_range: tuple[int, int | float]
+    col_range: tuple[int, int | float]
+
+
+class MainBox(BaseWidget):
+    pass
