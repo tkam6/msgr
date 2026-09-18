@@ -9,5 +9,6 @@
 build/
 tmp/
 venv/
+push.sh
 
 # Project source
