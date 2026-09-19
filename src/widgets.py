@@ -19,6 +19,7 @@ class BaseWidget:
     col_range: Range
     alignment: int = -1
     border: bool = False
+    border_type: str | None = None
 
 
 class MainBox(BaseWidget):

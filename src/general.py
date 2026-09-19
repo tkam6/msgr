@@ -5,21 +5,31 @@ KEYS = {
     "Q": ord("Q"),
 }
 
-ROUND_CHS = {
-    "top-left"    : "╭",
-    "top-right"   : "╮",
-    "bottom-left" : "╰",
-    "bottom-right": "╯",
-    "horizontal"  : "─",
-    "vertical"    : "│",
-}
-SHARP_CHS = {
-    "top-left"    : "┌",
-    "top-right"   : "┐",
-    "bottom-left" : "└",
-    "bottom-right": "┘",
-    "horizontal"  : "─",
-    "vertical"    : "│",
+BORDERS = {
+    "rounded": {
+        "top-left"    : "╭",
+        "top-right"   : "╮",
+        "bottom-left" : "╰",
+        "bottom-right": "╯",
+        "horizontal"  : "─",
+        "vertical"    : "│",
+    },
+    "sharp": {
+        "top-left"    : "┌",
+        "top-right"   : "┐",
+        "bottom-left" : "└",
+        "bottom-right": "┘",
+        "horizontal"  : "─",
+        "vertical"    : "│",
+    },
+    "double": {
+        "top-left"    : "╔",
+        "top-right"   : "╗",
+        "bottom-left" : "╚",
+        "bottom-right": "╝",
+        "horizontal"  : "═",
+        "vertical"    : "║",
+    },
 }
 
 

@@ -25,6 +25,7 @@ def main(scr: cur.window) -> list[int]:
             col_range=[0, math.inf],
             alignment=-1,
             border=True,
+            border_type="double",
         ),
         "label": wgts.MainBox(
             height=1,
@@ -35,6 +36,7 @@ def main(scr: cur.window) -> list[int]:
             col_range=[0, math.inf],
             alignment=0,
             border=False,
+            border_type=None,
         ),
         "convo-list": wgts.ConvoList(
             height=lambda win, widget: win.term_sz[0],
@@ -45,16 +47,18 @@ def main(scr: cur.window) -> list[int]:
             col_range=[0, math.inf],
             alignment=-1,
             border=False,
+            border_type=None,
         ),
         "convo-entry-1": wgts.ConvoEntry(
             height=4,
             width=lambda win, widget: win.term_sz[1] // 2,
             anchor=(2, 1),
-            content=[("SNEHA", cur.A_REVERSE), ("We have to meet Hanas sirryt",)],
+            content=[("USER1", cur.A_REVERSE), ("Hello world, this is a test message!",)],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=0,
             border=True,
+            border_type="rounded",
         ),
     }
 

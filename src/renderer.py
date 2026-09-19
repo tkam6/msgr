@@ -119,10 +119,13 @@ class Win:
                     attr=self.get_bitwise_or(attrs)
                 )
 
-            # draw widget borders
+            # DRAW WIDGET BORDERS
             if widget.border:
                 if height < 2:
                     raise RuntimeError(f"Widget '{name}': Cannot draw every damn thing in the space you've given")
+                if widget.border_type is None:
+                    raise RuntimeError(f"Widget '{name}': Borders enabled, but no border type specified")
+                borders = gen.BORDERS[widget.border_type]
 
                 # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
                 # TODO: implement clipping for vertical border lines
@@ -130,14 +133,9 @@ class Win:
                     left_cell = (y + i, anchor[1])
                     right_cell = (y + i, anchor[1] + width - 1)
                     if self.chk_cell_visibility(*left_cell):
-                        self.addch(*left_cell, gen.ROUND_CHS["vertical"])
+                        self.addch(*left_cell, borders["vertical"])
                     if self.chk_cell_visibility(*right_cell):
-                        self.addch(*right_cell, gen.ROUND_CHS["vertical"])
-
-                # For some blizzare reason, I couldn't accomodate these inside
-                # a single addnstr call. It left out the top-right and
-                # bottom-right corner for some reason. But I prefer it this
-                # way, as separate calls for corners and edges
+                        self.addch(*right_cell, borders["vertical"])
 
                 # TOP AND BOTTOM BORDER, CHAR-BY-CHAR
                 topleft_cell = (anchor[0], anchor[1])
@@ -146,7 +144,7 @@ class Win:
                 btmright_cell = (anchor[0] + height - 1, anchor[1] + width - 1)
                 # top-left cell
                 if self.chk_cell_visibility(*topleft_cell):
-                    self.addch(*topleft_cell, gen.ROUND_CHS["top-left"])
+                    self.addch(*topleft_cell, borders["top-left"])
 
                 # horizontal line, char-by-char
                 # TODO: implement clipping for horizontal border lines
@@ -155,15 +153,15 @@ class Win:
                     btm_cell = (anchor[0] + height - 1, x + i)
                     # top horizontal
                     if self.chk_cell_visibility(*top_cell):
-                        self.addch(*top_cell, gen.ROUND_CHS["horizontal"])
+                        self.addch(*top_cell, borders["horizontal"])
                     # bottom horizontal
                     if self.chk_cell_visibility(*btm_cell):
-                        self.addch(*btm_cell, gen.ROUND_CHS["horizontal"])
+                        self.addch(*btm_cell, borders["horizontal"])
 
                 # top-right cell
                 if self.chk_cell_visibility(*topright_cell):
-                    self.addch(*topright_cell, gen.ROUND_CHS["top-right"])
+                    self.addch(*topright_cell, borders["top-right"])
                 if self.chk_cell_visibility(*btmleft_cell):
-                    self.addch(*btmleft_cell, gen.ROUND_CHS["bottom-left"])
+                    self.addch(*btmleft_cell, borders["bottom-left"])
                 if self.chk_cell_visibility(*btmright_cell):
-                    self.addch(*btmright_cell, gen.ROUND_CHS["bottom-right"])
+                    self.addch(*btmright_cell, borders["bottom-right"])
