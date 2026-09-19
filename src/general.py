@@ -1,6 +1,4 @@
-debug_file = open("./all.log", "a+")
-
-FPS = 60
+TARGET_FPS = 60
 
 KEYS = {
     "q": ord("q"),
