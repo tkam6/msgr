@@ -102,9 +102,18 @@ class Win:
             for idx, (line, attrs) in enumerate(to_draw[: actual_height]):
                 if y + idx > self.term_sz[0] - 1:
                     break
+
+                right_shift = 0
+                # centre alignment
+                if widget.alignment == 0:
+                    right_shift = (actual_width - len(line[: actual_width])) // 2
+                # right alignment
+                elif widget.alignment == 1:
+                    right_shift = actual_width - len(line[: actual_width])
+
                 self.addnstr(
                     y + idx,
-                    x,
+                    x + right_shift,
                     line[: actual_width],
                     self.term_sz[1] - x - 1,
                     attr=self.get_bitwise_or(attrs)

@@ -28,7 +28,7 @@ def main(scr: cur.window) -> list[int]:
             content=[("MESSENGER",)],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
-            alignment=-1,
+            alignment=0,
             border=False,
         ),
         "convo-list": wgts.ConvoList(
@@ -48,7 +48,7 @@ def main(scr: cur.window) -> list[int]:
             content=[("Sneha", cur.A_REVERSE), ("Hi Thiru",)],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
-            alignment=-1,
+            alignment=1,
             border=True,
         ),
     }
