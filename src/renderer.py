@@ -39,7 +39,7 @@ class Win:
             if not (y == self.term_sz[0] - 1 and x + n < self.term_sz[1]):
                 raise
 
-    def chk_point_visibility(self, y: int, x: int) -> bool:
+    def chk_cell_visibility(self, y: int, x: int) -> bool:
         return 0 <= y < self.term_sz[0] and 0 <= x < self.term_sz[1]
 
     def get_bitwise_or(self, arr: ty.Iterable[int]) -> int | None:
@@ -102,10 +102,13 @@ class Win:
             for idx, (line, attrs) in enumerate(to_draw[: actual_height]):
                 if y + idx > self.term_sz[0] - 1:
                     break
-                if attrs:
-                    with open("all.log", "w") as f:
-                        f.write(str(self.get_bitwise_or(attrs)) + " " + str(cur.A_REVERSE))
-                self.addnstr(y + idx, x, line[: actual_width], self.term_sz[1] - x - 1, attr=self.get_bitwise_or(attrs))
+                self.addnstr(
+                    y + idx,
+                    x,
+                    line[: actual_width],
+                    self.term_sz[1] - x - 1,
+                    attr=self.get_bitwise_or(attrs)
+                )
 
             # draw widget borders
             if widget.border:
@@ -117,9 +120,9 @@ class Win:
                 for i in range(actual_height):
                     left_cell = (y + i, anchor[1])
                     right_cell = (y + i, anchor[1] + width - 1)
-                    if self.chk_point_visibility(*left_cell):
+                    if self.chk_cell_visibility(*left_cell):
                         self.addch(*left_cell, gen.ROUND_CHS["vertical"])
-                    if self.chk_point_visibility(*right_cell):
+                    if self.chk_cell_visibility(*right_cell):
                         self.addch(*right_cell, gen.ROUND_CHS["vertical"])
 
                 # For some blizzare reason, I couldn't accomodate these inside
@@ -133,7 +136,7 @@ class Win:
                 btmleft_cell = (anchor[0] + height - 1, anchor[1])
                 btmright_cell = (anchor[0] + height - 1, anchor[1] + width - 1)
                 # top-left cell
-                if self.chk_point_visibility(*topleft_cell):
+                if self.chk_cell_visibility(*topleft_cell):
                     self.addch(*topleft_cell, gen.ROUND_CHS["top-left"])
 
                 # horizontal line, char-by-char
@@ -142,16 +145,16 @@ class Win:
                     top_cell = (anchor[0], x + i)
                     btm_cell = (anchor[0] + height - 1, x + i)
                     # top horizontal
-                    if self.chk_point_visibility(*top_cell):
+                    if self.chk_cell_visibility(*top_cell):
                         self.addch(*top_cell, gen.ROUND_CHS["horizontal"])
                     # bottom horizontal
-                    if self.chk_point_visibility(*btm_cell):
+                    if self.chk_cell_visibility(*btm_cell):
                         self.addch(*btm_cell, gen.ROUND_CHS["horizontal"])
 
                 # top-right cell
-                if self.chk_point_visibility(*topright_cell):
+                if self.chk_cell_visibility(*topright_cell):
                     self.addch(*topright_cell, gen.ROUND_CHS["top-right"])
-                if self.chk_point_visibility(*btmleft_cell):
+                if self.chk_cell_visibility(*btmleft_cell):
                     self.addch(*btmleft_cell, gen.ROUND_CHS["bottom-left"])
-                if self.chk_point_visibility(*btmright_cell):
+                if self.chk_cell_visibility(*btmright_cell):
                     self.addch(*btmright_cell, gen.ROUND_CHS["bottom-right"])

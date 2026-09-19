@@ -1,19 +1,12 @@
 import dataclasses as dcs
 import typing as ty
 
-from src import general as gen
-
 if ty.TYPE_CHECKING:
     from src import renderer as ren
 
 type Dimen = int | ty.Callable[["ren.Win"], int]
 type Anchor = tuple[Dimen, Dimen]
 type Range = tuple[Dimen, Dimen | float]
-
-anchor_centre = (
-    lambda win, widget: (win.term_sz[0] - widget.height(win, widget) if callable(widget.height) else widget.height) // 2,
-    lambda win, widget: (win.term_sz[1] - widget.width(win, widget) if callable(widget.width) else widget.height) // 2,
-)
 
 
 @dcs.dataclass
@@ -38,3 +31,25 @@ class ConvoList(BaseWidget):
 
 class ConvoEntry(BaseWidget):
     pass
+
+
+class Label(BaseWidget):
+    pass
+
+
+def anchor_vert_centre(win: "ren.Win", widget: BaseWidget) -> int:
+    if callable(widget.height):
+        return (win.term_sz[0] - widget.height(win, widget)) // 2
+    return (win.term_sz[0] - widget.height) // 2
+
+
+def anchor_hori_centre(win: "ren.Win", widget: BaseWidget) -> int:
+    with open("all.log", "w") as f:
+        f.write(str(win.term_sz[1] - widget.width(win, widget)) + "\n")
+
+    if callable(widget.width):
+        return (win.term_sz[1] - widget.width(win, widget)) // 2
+    return (win.term_sz[1] - widget.width) // 2
+
+
+anchor_centre = (anchor_vert_centre, anchor_hori_centre)
