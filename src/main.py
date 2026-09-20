@@ -1,4 +1,5 @@
 #!/usr/bin/env -S python3 -BOO
+import cProfile
 import curses as cur
 import math
 import time
@@ -9,9 +10,10 @@ from src import widgets as wgts
 
 total = 0
 frames = 0
+prof = cProfile.Profile()
 
 
-def main(scr: cur.window) -> list[int]:
+def start(scr: cur.window) -> list[int]:
     global total, frames
 
     win = ren.Win(scr)
@@ -64,6 +66,8 @@ def main(scr: cur.window) -> list[int]:
 
     frame_time = 1 / gen.TARGET_FPS
     last = time.perf_counter()
+    prof.enable()
+
     while True:
         key = win.scr.getch()
         if gen.is_key(key, ("q", "Q")):
@@ -74,7 +78,7 @@ def main(scr: cur.window) -> list[int]:
         win.erase()
         win.draw(widget_list)
         # frame rate limiter
-        time.sleep(max(0, frame_time - (time.perf_counter() - last)))
+        # time.sleep(max(0, frame_time - (time.perf_counter() - last)))
         win.addnstr(1, 1, f"FRAME RATE {round(1 / (time.perf_counter() - last))}", win.term_sz[1])
         win.refresh()
 
@@ -83,15 +87,22 @@ def main(scr: cur.window) -> list[int]:
         frames += 1
         last = now
 
+    prof.disable()
     return (total, frames)
 
 
-if __name__ == "__main__":
+def main():
     try:
-        total, frames = cur.wrapper(main)
+        total, frames = cur.wrapper(start)
     except (KeyboardInterrupt, EOFError):
         pass
     finally:
         print("TOTAL FRAMES", frames)
         print(f"TOTAL FRAME TIME {round(total, 3)}s")
         print("AVG FRAME RATE", round(frames / total))
+
+
+if __name__ == "__main__":
+    main()
+    # cProfile.run("main()", sort="cumulative")
+    prof.print_stats(sort="cumulative")

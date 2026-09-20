@@ -45,9 +45,6 @@ def anchor_vert_centre(win: "ren.Win", widget: BaseWidget) -> int:
 
 
 def anchor_hori_centre(win: "ren.Win", widget: BaseWidget) -> int:
-    with open("all.log", "w") as f:
-        f.write(str(win.term_sz[1] - widget.width(win, widget)) + "\n")
-
     if callable(widget.width):
         return (win.term_sz[1] - widget.width(win, widget)) // 2
     return (win.term_sz[1] - widget.width) // 2
