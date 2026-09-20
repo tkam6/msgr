@@ -1,11 +1,16 @@
 import curses as cur
 import math
+import sys
 import typing as ty
+
+import numpy as np
 
 from src import general as gen
 
 if ty.TYPE_CHECKING:
     from src import widgets as wgts
+
+np.set_printoptions(threshold=sys.maxsize)
 
 
 class Win:
@@ -36,7 +41,7 @@ class Win:
             else:
                 self.scr.addnstr(y, x, s, n, attr)
         except cur.error:
-            if not (y == self.term_sz[0] - 1 and x + n < self.term_sz[1]):
+            if y != self.term_sz[0] - 1:
                 raise
 
     def chk_cell_visibility(self, y: int, x: int) -> bool:
@@ -50,12 +55,12 @@ class Win:
             res = res | i
         return res
 
-    # TODO: make dimensions and anchors include lambdas and functions for
-    # dynamic dimensions
     def draw(self, widget_list: "dict[str, wgts.BaseWidget]") -> None:
         self.term_sz = self.scr.getmaxyx()
+        screen_buf = np.full(self.term_sz, "\x00", dtype="U1")
 
-        for name, widget in widget_list.items():
+        for widget in widget_list:
+            name = widget.name
             width = widget.width(self, widget) if callable(widget.width) else widget.width
             height = widget.height(self, widget) if callable(widget.height) else widget.height
             anchor = (
@@ -76,6 +81,7 @@ class Win:
             x = anchor[1] + (1 if widget.border else 0)
             line_range1 = line_range[1]
             col_range1 = col_range[1]
+            new_buf = np.full((height, width), "\x00", dtype="U1")
 
             # line and column ranges first indices aren't supposed to be inf
             if math.isinf(line_range[0]):
@@ -111,57 +117,71 @@ class Win:
                 elif widget.alignment == 1:
                     right_shift = actual_width - len(line[: actual_width])
 
-                self.addnstr(
-                    y + idx,
-                    x + right_shift,
-                    line[: actual_width],
-                    self.term_sz[1] - x - 1,
-                    attr=self.get_bitwise_or(attrs)
-                )
+                new_buf[idx][right_shift : actual_width - right_shift] = line[: actual_width - right_shift]
 
             # DRAW WIDGET BORDERS
-            if widget.border:
-                if height < 2:
-                    raise RuntimeError(f"Widget '{name}': Cannot draw every damn thing in the space you've given")
-                if widget.border_type is None:
-                    raise RuntimeError(f"Widget '{name}': Borders enabled, but no border type specified")
-                borders = gen.BORDERS[widget.border_type]
+            if not widget.border:
+                continue
 
-                # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
-                # TODO: implement clipping for vertical border lines
-                for i in range(actual_height):
-                    left_cell = (y + i, anchor[1])
-                    right_cell = (y + i, anchor[1] + width - 1)
-                    if self.chk_cell_visibility(*left_cell):
-                        self.addch(*left_cell, borders["vertical"])
-                    if self.chk_cell_visibility(*right_cell):
-                        self.addch(*right_cell, borders["vertical"])
+            if height < 2:
+                raise RuntimeError(f"Widget '{name}': Cannot draw every damn thing in the space you've given")
+            if widget.border_type is None:
+                raise RuntimeError(f"Widget '{name}': Borders enabled, but no border type specified")
+            borders = gen.BORDERS[widget.border_type]
 
-                # TOP AND BOTTOM BORDER, CHAR-BY-CHAR
-                topleft_cell = (anchor[0], anchor[1])
-                topright_cell = (anchor[0], anchor[1] + width - 1)
-                btmleft_cell = (anchor[0] + height - 1, anchor[1])
-                btmright_cell = (anchor[0] + height - 1, anchor[1] + width - 1)
-                # top-left cell
-                if self.chk_cell_visibility(*topleft_cell):
-                    self.addch(*topleft_cell, borders["top-left"])
+            # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
+            # TODO: implement clipping for vertical border lines
+            # vertical lines, char-by-char
+            for i in range(1, actual_height + 1):
+                left_cell = (i, 0)
+                right_cell = (i, width - 1)
+                # left vertical
+                new_buf[left_cell[0]][left_cell[1]] = borders["vertical"]
+                # right vertical
+                new_buf[right_cell[0]][right_cell[1]] = borders["vertical"]
 
-                # horizontal line, char-by-char
-                # TODO: implement clipping for horizontal border lines
-                for i in range(actual_width):
-                    top_cell = (anchor[0], x + i)
-                    btm_cell = (anchor[0] + height - 1, x + i)
-                    # top horizontal
-                    if self.chk_cell_visibility(*top_cell):
-                        self.addch(*top_cell, borders["horizontal"])
-                    # bottom horizontal
-                    if self.chk_cell_visibility(*btm_cell):
-                        self.addch(*btm_cell, borders["horizontal"])
+            # TOP AND BOTTOM BORDER, CHAR-BY-CHAR
+            topleft_cell = (0, 0)
+            topright_cell = (0, width - 1)
+            btmleft_cell = (height - 1, 0)
+            btmright_cell = (height - 1, width - 1)
+            # top-left cell
+            new_buf[topleft_cell[0]][topleft_cell[1]] = borders["top-left"]
+            new_buf[topright_cell[0]][topright_cell[1]] = borders["top-right"]
+            new_buf[btmleft_cell[0]][btmleft_cell[1]] = borders["bottom-left"]
+            new_buf[btmright_cell[0]][btmright_cell[1]] = borders["bottom-right"]
 
-                # top-right cell
-                if self.chk_cell_visibility(*topright_cell):
-                    self.addch(*topright_cell, borders["top-right"])
-                if self.chk_cell_visibility(*btmleft_cell):
-                    self.addch(*btmleft_cell, borders["bottom-left"])
-                if self.chk_cell_visibility(*btmright_cell):
-                    self.addch(*btmright_cell, borders["bottom-right"])
+            # TODO: implement clipping for horizontal border lines
+            # horizontal line, char-by-char
+            for i in range(1, actual_width + 1):
+                top_cell = (0, i)
+                btm_cell = (height - 1, i)
+                # top horizontal
+                new_buf[top_cell[0]][top_cell[1]] = borders["horizontal"]
+                # bottom horizontal
+                new_buf[btm_cell[0]][btm_cell[1]] = borders["horizontal"]
+
+            widget_y_start = max(0, -anchor[0])
+            widget_x_start = max(0, -anchor[1])
+            screen_y_start = max(0, anchor[0])
+            screen_x_start = max(0, anchor[1])
+
+            visible_y_len = min(height + widget_y_start, self.term_sz[0] - screen_y_start)
+            visible_x_len = min(height + widget_x_start, self.term_sz[1] - screen_x_start)
+
+            widget_y_end = widget_y_start + visible_y_len
+            widget_x_end = widget_x_start + visible_x_len
+            screen_y_end = screen_y_start + visible_y_len
+            screen_x_end = screen_x_start + visible_x_len
+
+            widget_part = new_buf[widget_y_start : widget_y_end, widget_x_start : widget_x_end]
+            screen_part = screen_buf[screen_y_start : screen_y_end, screen_x_start : screen_x_end]
+            mask = widget_part != "\x00"
+
+            screen_part[:] = np.where(mask, widget_part, screen_part)
+
+        with open("all.log", "w") as f:
+            for i, row in enumerate(screen_buf):
+                print(self.term_sz[1], file=f)
+                row[row == "\x00"] = " "
+            self.addnstr(i, 0, "".join(row), self.term_sz[1])

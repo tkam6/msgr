@@ -8,61 +8,65 @@ from src import general as gen
 from src import renderer as ren
 from src import widgets as wgts
 
+prof = cProfile.Profile()
 total = 0
 frames = 0
-prof = cProfile.Profile()
 
 
 def start(scr: cur.window) -> list[int]:
     global total, frames
 
     win = ren.Win(scr)
-    widget_list = {
-        "main-box": wgts.MainBox(
+    widget_list = [
+        wgts.MainBox(
+            name="main-box",
             height=lambda win, widget: win.term_sz[0],
             width=lambda win, widget: win.term_sz[1],
             anchor=wgts.anchor_centre,
-            content=[],
+            content=[("hi sneha",), ("hi sneha 2",), ("",), ("",), ("",), ("hi sneha 3",)],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=-1,
             border=True,
             border_type="double",
         ),
-        "label": wgts.MainBox(
-            height=1,
-            width=lambda win, widget: win.term_sz[1] // 2,
-            anchor=(1, wgts.anchor_hori_centre),
-            content=[("MESSENGER",)],
-            line_range=[0, math.inf],
-            col_range=[0, math.inf],
-            alignment=0,
-            border=False,
-            border_type=None,
-        ),
-        "convo-list": wgts.ConvoList(
-            height=lambda win, widget: win.term_sz[0],
-            width=lambda win, widget: win.term_sz[1],
-            anchor=wgts.anchor_centre,
-            content=[],
-            line_range=[0, math.inf],
-            col_range=[0, math.inf],
-            alignment=-1,
-            border=False,
-            border_type=None,
-        ),
-        "convo-entry-1": wgts.ConvoEntry(
+        # wgts.MainBox(
+        #     name="label",
+        #     height=1,
+        #     width=lambda win, widget: win.term_sz[1] // 2,
+        #     anchor=(1, wgts.anchor_hori_centre),
+        #     content=[("MESSENGER",)],
+        #     line_range=[0, math.inf],
+        #     col_range=[0, math.inf],
+        #     alignment=0,
+        #     border=False,
+        #     border_type=None,
+        # ),
+        # wgts.ConvoList(
+        #     name="convo-list",
+        #     height=lambda win, widget: win.term_sz[0],
+        #     width=lambda win, widget: win.term_sz[1],
+        #     anchor=wgts.anchor_centre,
+        #     content=[],
+        #     line_range=[0, math.inf],
+        #     col_range=[0, math.inf],
+        #     alignment=-1,
+        #     border=False,
+        #     border_type=None,
+        # ),
+        wgts.ConvoEntry(
+            name="convo-entry-1",
             height=4,
             width=lambda win, widget: win.term_sz[1] // 2,
             anchor=(2, 1),
-            content=[("USER1", cur.A_REVERSE), ("Hello world, this is a test message!",)],
+            content=[("USER1")],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=0,
             border=True,
             border_type="rounded",
         ),
-    }
+    ]
 
     frame_time = 1 / gen.TARGET_FPS
     last = time.perf_counter()
@@ -99,7 +103,7 @@ def main():
     finally:
         print("TOTAL FRAMES", frames)
         print(f"TOTAL FRAME TIME {round(total, 3)}s")
-        print("AVG FRAME RATE", round(frames / total))
+        print("AVG FRAME RATE", "ud" if frames == 0 else round(frames / total))
 
 
 if __name__ == "__main__":
