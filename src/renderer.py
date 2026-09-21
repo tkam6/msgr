@@ -27,6 +27,9 @@ class Win:
         self.erase = self.scr.erase
         self.refresh = self.scr.refresh
 
+        self.screen_buf = np.empty((0, 0), dtype="U1")
+        self.attr_buf = np.empty((0, 0), dtype=np.int32)
+
     def addch(self, y: int, x: int, c: str, attr: int) -> None:
         try:
             self.scr.addch(y, x, c, attr)
@@ -54,9 +57,11 @@ class Win:
 
     def draw(self, widget_list: "dict[str, wgts.BaseWidget]") -> None:
         self.term_sz = self.scr.getmaxyx()
-        screen_buf = np.full(self.term_sz, "\x00", dtype="U1")
-        attr_buf = np.full(self.term_sz, 0, dtype=np.int32)
-        # f = open("./all.log", "w")
+        if self.screen_buf.shape != self.term_sz or self.attr_buf.shape != self.term_sz:
+            self.screen_buf = np.empty(self.term_sz, dtype="U1")
+            self.attr_buf = np.empty(self.term_sz, dtype=np.int32)
+        self.screen_buf.fill("\x00")
+        self.attr_buf.fill(0)
 
         for widget in widget_list:
             name = widget.name
@@ -81,6 +86,7 @@ class Win:
             line_range1 = line_range[1]
             col_range1 = col_range[1]
             new_buf = np.full((height, width), "\x00", dtype="U1")
+            attr_new_buf = np.zeros((height, width), dtype=np.int32)
 
             # line and column ranges first indices aren't supposed to be inf
             if math.isinf(line_range[0]):
@@ -120,10 +126,7 @@ class Win:
 
                 border_len_x = abs(x - anchor[1])
                 new_buf[idx, border_len_x + right_shift : border_len_x + right_shift + len(line_trimmed)] = list(line_trimmed)
-                attr_buf[
-                    idx,
-                    border_len_x + right_shift : border_len_x + right_shift + len(line_trimmed)
-                ] = np.array([self.get_bitwise_or(attrs) * len(line_trimmed)])
+                attr_new_buf[idx, border_len_x + right_shift : border_len_x + right_shift + len(line_trimmed)] = self.get_bitwise_or(attrs)
 
             # DRAW WIDGET BORDERS
             if widget.border:
@@ -133,37 +136,22 @@ class Win:
                     raise RuntimeError(f"Widget '{name}': Borders enabled, but no border type specified")
                 borders = gen.BORDERS[widget.border_type]
 
-                # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
-                # TODO: implement clipping for vertical border lines
-                # vertical lines, char-by-char
-                for i in range(1, actual_height + 1):
-                    left_cell = (i, 0)
-                    right_cell = (i, width - 1)
-                    # left vertical
-                    new_buf[left_cell[0]][left_cell[1]] = borders["vertical"]
-                    # right vertical
-                    new_buf[right_cell[0]][right_cell[1]] = borders["vertical"]
+                # vertical border lines
+                new_buf[1 : height - 1, 0] = borders["vertical"]
+                new_buf[1 : height - 1, width - 1] = borders["vertical"]
 
-                # TOP AND BOTTOM BORDER, CHAR-BY-CHAR
                 topleft_cell = (0, 0)
                 topright_cell = (0, width - 1)
                 btmleft_cell = (height - 1, 0)
                 btmright_cell = (height - 1, width - 1)
-                # top-left cell
                 new_buf[topleft_cell[0]][topleft_cell[1]] = borders["top-left"]
                 new_buf[topright_cell[0]][topright_cell[1]] = borders["top-right"]
                 new_buf[btmleft_cell[0]][btmleft_cell[1]] = borders["bottom-left"]
                 new_buf[btmright_cell[0]][btmright_cell[1]] = borders["bottom-right"]
 
-                # TODO: implement clipping for horizontal border lines
-                # horizontal line, char-by-char
-                for i in range(1, actual_width + 1):
-                    top_cell = (0, i)
-                    btm_cell = (height - 1, i)
-                    # top horizontal
-                    new_buf[top_cell[0]][top_cell[1]] = borders["horizontal"]
-                    # bottom horizontal
-                    new_buf[btm_cell[0]][btm_cell[1]] = borders["horizontal"]
+                # horizontal border lines
+                new_buf[0, 1 : width - 1] = borders["horizontal"]
+                new_buf[height - 1, 1 : width - 1] = borders["horizontal"]
 
             widget_y_start = max(0, -anchor[0])
             widget_x_start = max(0, -anchor[1])
@@ -171,9 +159,6 @@ class Win:
             screen_x_start = max(0, anchor[1])
 
             visible_y_len = min(height - widget_y_start, self.term_sz[0] - screen_y_start)
-            # I swear on God... I accidentally put in height instead of width
-            # here, presumably from copying the previous line, and you've got
-            # no idea it took to find that out...
             visible_x_len = min(width - widget_x_start, self.term_sz[1] - screen_x_start)
 
             widget_y_end = widget_y_start + visible_y_len
@@ -182,15 +167,27 @@ class Win:
             screen_x_end = screen_x_start + visible_x_len
 
             widget_part = new_buf[widget_y_start : widget_y_end, widget_x_start : widget_x_end]
-            screen_part = screen_buf[screen_y_start : screen_y_end, screen_x_start : screen_x_end]
+            screen_part = self.screen_buf[screen_y_start : screen_y_end, screen_x_start : screen_x_end]
             mask = widget_part != "\x00"
             screen_part[:] = np.where(mask, widget_part, screen_part)
 
-        for i, row in enumerate(screen_buf):
+            # for attributes
+            attr_widget_part = attr_new_buf[widget_y_start : widget_y_end, widget_x_start : widget_x_end]
+            attr_screen_part = self.attr_buf[screen_y_start : screen_y_end, screen_x_start : screen_x_end]
+            attr_mask = attr_widget_part != 0
+            attr_screen_part[:] = np.where(attr_mask, attr_widget_part, attr_screen_part)
+
+
+        for i in range(self.screen_buf.shape[0]):
+            row = self.screen_buf[i]
+            attr_row = self.attr_buf[i]
             row[row == "\x00"] = " "
-            self.addnstr(i, 0, row.view(f"U{row.shape[0]}")[0], self.term_sz[1], cur.A_NORMAL)
-        # for i, row in enumerate(screen_buf):
-        #     row[row == "\x00"] = " "
-        #     for j, col in enumerate(row):
-        #         print(f"i = {i}, j = {j}, attr = {attr_buf[i, j]}", file=f) if attr_buf[i, j] != 0 else None
-        #         self.addch(i, j, col, attr_buf[i, j])
+
+            change_idxs = np.flatnonzero(np.diff(attr_row)) + 1
+            starts = np.concatenate(([0], change_idxs))
+            ends = np.concatenate((change_idxs, [len(attr_row)]))
+
+            for start, end in zip(starts, ends):
+                run_len = end - start
+                s = row[start : end].view(f"U{run_len}")[0]
+                self.addnstr(i, start, s, run_len, int(attr_row[start]))
