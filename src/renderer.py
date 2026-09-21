@@ -58,6 +58,7 @@ class Win:
     def draw(self, widget_list: "dict[str, wgts.BaseWidget]") -> None:
         self.term_sz = self.scr.getmaxyx()
         screen_buf = np.full(self.term_sz, "\x00", dtype="U1")
+        # f = open("./all.log", "w")
 
         for widget in widget_list:
             name = widget.name
@@ -104,70 +105,74 @@ class Win:
                 for line, *attrs in lines
             ]
 
+            border_len_y = abs(y - anchor[0])
             # draw only top-left-most part of extracted range lines and columns
-            for idx, (line, attrs) in enumerate(to_draw[: actual_height]):
+            for idx, (line, attrs) in enumerate(to_draw[: actual_height], start=border_len_y):
                 if y + idx > self.term_sz[0] - 1:
                     break
+                line_trimmed = line[: actual_width]
 
                 right_shift = 0
                 # centre alignment
                 if widget.alignment == 0:
-                    right_shift = (actual_width - len(line[: actual_width])) // 2
+                    right_shift = (actual_width - len(line_trimmed)) // 2
                 # right alignment
                 elif widget.alignment == 1:
-                    right_shift = actual_width - len(line[: actual_width])
+                    right_shift = actual_width - len(line_trimmed)
 
-                new_buf[idx][right_shift : actual_width - right_shift] = line[: actual_width - right_shift]
+                border_len_x = abs(x - anchor[1])
+                new_buf[idx, border_len_x + right_shift : border_len_x + right_shift + len(line_trimmed)] = list(line_trimmed)
 
             # DRAW WIDGET BORDERS
-            if not widget.border:
-                continue
+            if widget.border:
+                if height < 2:
+                    raise RuntimeError(f"Widget '{name}': Cannot draw every damn thing in the space you've given")
+                if widget.border_type is None:
+                    raise RuntimeError(f"Widget '{name}': Borders enabled, but no border type specified")
+                borders = gen.BORDERS[widget.border_type]
 
-            if height < 2:
-                raise RuntimeError(f"Widget '{name}': Cannot draw every damn thing in the space you've given")
-            if widget.border_type is None:
-                raise RuntimeError(f"Widget '{name}': Borders enabled, but no border type specified")
-            borders = gen.BORDERS[widget.border_type]
+                # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
+                # TODO: implement clipping for vertical border lines
+                # vertical lines, char-by-char
+                for i in range(1, actual_height + 1):
+                    left_cell = (i, 0)
+                    right_cell = (i, width - 1)
+                    # left vertical
+                    new_buf[left_cell[0]][left_cell[1]] = borders["vertical"]
+                    # right vertical
+                    new_buf[right_cell[0]][right_cell[1]] = borders["vertical"]
 
-            # LEFT AND RIGHT (VERTICAL) BORDERS, CHAR-BY-CHAR
-            # TODO: implement clipping for vertical border lines
-            # vertical lines, char-by-char
-            for i in range(1, actual_height + 1):
-                left_cell = (i, 0)
-                right_cell = (i, width - 1)
-                # left vertical
-                new_buf[left_cell[0]][left_cell[1]] = borders["vertical"]
-                # right vertical
-                new_buf[right_cell[0]][right_cell[1]] = borders["vertical"]
+                # TOP AND BOTTOM BORDER, CHAR-BY-CHAR
+                topleft_cell = (0, 0)
+                topright_cell = (0, width - 1)
+                btmleft_cell = (height - 1, 0)
+                btmright_cell = (height - 1, width - 1)
+                # top-left cell
+                new_buf[topleft_cell[0]][topleft_cell[1]] = borders["top-left"]
+                new_buf[topright_cell[0]][topright_cell[1]] = borders["top-right"]
+                new_buf[btmleft_cell[0]][btmleft_cell[1]] = borders["bottom-left"]
+                new_buf[btmright_cell[0]][btmright_cell[1]] = borders["bottom-right"]
 
-            # TOP AND BOTTOM BORDER, CHAR-BY-CHAR
-            topleft_cell = (0, 0)
-            topright_cell = (0, width - 1)
-            btmleft_cell = (height - 1, 0)
-            btmright_cell = (height - 1, width - 1)
-            # top-left cell
-            new_buf[topleft_cell[0]][topleft_cell[1]] = borders["top-left"]
-            new_buf[topright_cell[0]][topright_cell[1]] = borders["top-right"]
-            new_buf[btmleft_cell[0]][btmleft_cell[1]] = borders["bottom-left"]
-            new_buf[btmright_cell[0]][btmright_cell[1]] = borders["bottom-right"]
-
-            # TODO: implement clipping for horizontal border lines
-            # horizontal line, char-by-char
-            for i in range(1, actual_width + 1):
-                top_cell = (0, i)
-                btm_cell = (height - 1, i)
-                # top horizontal
-                new_buf[top_cell[0]][top_cell[1]] = borders["horizontal"]
-                # bottom horizontal
-                new_buf[btm_cell[0]][btm_cell[1]] = borders["horizontal"]
+                # TODO: implement clipping for horizontal border lines
+                # horizontal line, char-by-char
+                for i in range(1, actual_width + 1):
+                    top_cell = (0, i)
+                    btm_cell = (height - 1, i)
+                    # top horizontal
+                    new_buf[top_cell[0]][top_cell[1]] = borders["horizontal"]
+                    # bottom horizontal
+                    new_buf[btm_cell[0]][btm_cell[1]] = borders["horizontal"]
 
             widget_y_start = max(0, -anchor[0])
             widget_x_start = max(0, -anchor[1])
             screen_y_start = max(0, anchor[0])
             screen_x_start = max(0, anchor[1])
 
-            visible_y_len = min(height + widget_y_start, self.term_sz[0] - screen_y_start)
-            visible_x_len = min(height + widget_x_start, self.term_sz[1] - screen_x_start)
+            visible_y_len = min(height - widget_y_start, self.term_sz[0] - screen_y_start)
+            # I swear on God... I accidentally put in height instead of width
+            # here, presumably from copying the previous line, and you've got
+            # no idea it took to find that out...
+            visible_x_len = min(width - widget_x_start, self.term_sz[1] - screen_x_start)
 
             widget_y_end = widget_y_start + visible_y_len
             widget_x_end = widget_x_start + visible_x_len
@@ -177,11 +182,8 @@ class Win:
             widget_part = new_buf[widget_y_start : widget_y_end, widget_x_start : widget_x_end]
             screen_part = screen_buf[screen_y_start : screen_y_end, screen_x_start : screen_x_end]
             mask = widget_part != "\x00"
-
             screen_part[:] = np.where(mask, widget_part, screen_part)
 
-        with open("all.log", "w") as f:
-            for i, row in enumerate(screen_buf):
-                print(self.term_sz[1], file=f)
-                row[row == "\x00"] = " "
+        for i, row in enumerate(screen_buf):
+            row[row == "\x00"] = " "
             self.addnstr(i, 0, "".join(row), self.term_sz[1])
