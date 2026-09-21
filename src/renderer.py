@@ -27,19 +27,16 @@ class Win:
         self.erase = self.scr.erase
         self.refresh = self.scr.refresh
 
-    def addch(self, y: int, x: int, c: str) -> None:
+    def addch(self, y: int, x: int, c: str, attr: int) -> None:
         try:
-            self.scr.addch(y, x, c)
+            self.scr.addch(y, x, c, attr)
         except cur.error:
-            if not (y == self.term_sz[0] - 1 and x == self.term_sz[1] - 1):
+            if y != self.term_sz[0] - 1 or x != self.term_sz[1] - 1:
                 raise
 
-    def addnstr(self, y: int, x: int, s: str, n: int, attr: int | None = None) -> None:
+    def addnstr(self, y: int, x: int, s: str, n: int, attr: int) -> None:
         try:
-            if attr is None:
-                self.scr.addnstr(y, x, s, n)
-            else:
-                self.scr.addnstr(y, x, s, n, attr)
+            self.scr.addnstr(y, x, s, n, attr)
         except cur.error:
             if y != self.term_sz[0] - 1:
                 raise
@@ -49,7 +46,7 @@ class Win:
 
     def get_bitwise_or(self, arr: ty.Iterable[int]) -> int | None:
         if not arr:
-            return None
+            return 0
         res = arr[0]
         for i in arr[1 :]:
             res = res | i
@@ -58,6 +55,7 @@ class Win:
     def draw(self, widget_list: "dict[str, wgts.BaseWidget]") -> None:
         self.term_sz = self.scr.getmaxyx()
         screen_buf = np.full(self.term_sz, "\x00", dtype="U1")
+        attr_buf = np.full(self.term_sz, 0, dtype=np.int32)
         # f = open("./all.log", "w")
 
         for widget in widget_list:
@@ -122,6 +120,10 @@ class Win:
 
                 border_len_x = abs(x - anchor[1])
                 new_buf[idx, border_len_x + right_shift : border_len_x + right_shift + len(line_trimmed)] = list(line_trimmed)
+                attr_buf[
+                    idx,
+                    border_len_x + right_shift : border_len_x + right_shift + len(line_trimmed)
+                ] = np.array([self.get_bitwise_or(attrs) * len(line_trimmed)])
 
             # DRAW WIDGET BORDERS
             if widget.border:
@@ -186,4 +188,9 @@ class Win:
 
         for i, row in enumerate(screen_buf):
             row[row == "\x00"] = " "
-            self.addnstr(i, 0, "".join(row.tolist()), self.term_sz[1])
+            self.addnstr(i, 0, row.view(f"U{row.shape[0]}")[0], self.term_sz[1], cur.A_NORMAL)
+        # for i, row in enumerate(screen_buf):
+        #     row[row == "\x00"] = " "
+        #     for j, col in enumerate(row):
+        #         print(f"i = {i}, j = {j}, attr = {attr_buf[i, j]}", file=f) if attr_buf[i, j] != 0 else None
+        #         self.addch(i, j, col, attr_buf[i, j])

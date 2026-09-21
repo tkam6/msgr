@@ -26,7 +26,7 @@ def start(scr: cur.window) -> list[int]:
             height=lambda win, widget: win.term_sz[0],
             width=lambda win, widget: win.term_sz[1],
             anchor=wgts.anchor_centre,
-            content=[("hi sneha",), ("hi sneha 2",), ("",), ("",), ("",), ("hi sneha 3",)],
+            content=[("hi test_user",), ("hi test_user 2",), ("",), ("",), ("",), ("hi test_user 3",)],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=-1,
@@ -65,7 +65,7 @@ def start(scr: cur.window) -> list[int]:
                 lambda win, widget: win.term_sz[0] - 5,
                 lambda win, widget: win.term_sz[1] - 5,
             ),
-            content=[("USER1",), ("sneha",)],
+            content=[("USER1", cur.A_REVERSE), ("test_user",)],
             line_range=[0, math.inf],
             col_range=[0, math.inf],
             alignment=-1,
@@ -89,7 +89,7 @@ def start(scr: cur.window) -> list[int]:
         win.draw(widget_list)
         # frame rate limiter
         # time.sleep(max(0, frame_time - (time.perf_counter() - last)))
-        win.addnstr(1, 1, f"FRAME RATE {round(1 / (time.perf_counter() - last))}", win.term_sz[1])
+        win.addnstr(1, 1, f"FRAME RATE {round(1 / (time.perf_counter() - last))}", win.term_sz[1], cur.A_NORMAL)
         win.refresh()
 
         # for frame rate calculation
