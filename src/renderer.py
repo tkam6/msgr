@@ -186,4 +186,4 @@ class Win:
 
         for i, row in enumerate(screen_buf):
             row[row == "\x00"] = " "
-            self.addnstr(i, 0, "".join(row), self.term_sz[1])
+            self.addnstr(i, 0, "".join(row.tolist()), self.term_sz[1])
